@@ -4,15 +4,15 @@ import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Mode
 import org.openjdk.jmh.annotations.OutputTimeUnit
-
-import java.util.concurrent.TimeUnit
+import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
+import org.openjdk.jmh.annotations.State
+
+import java.net.URL
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.Files
-import java.net.URL
-import org.openjdk.jmh.annotations.State
-import org.openjdk.jmh.annotations.Scope
+import java.util.concurrent.TimeUnit
 
 case class Corpus(url: String) {
   def localPath(): Path = {

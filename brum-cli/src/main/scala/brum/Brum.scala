@@ -1,9 +1,9 @@
 package brum
 
+import scala.collection.mutable.ArrayBuffer
 import scala.tools.nsc.Settings
 import scala.tools.nsc.reporters.ConsoleReporter
 import scala.util.control.NonFatal
-import scala.collection.mutable.ArrayBuffer
 
 object Brum {
   def main(args: Array[String]): Unit = {

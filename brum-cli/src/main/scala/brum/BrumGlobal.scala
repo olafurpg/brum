@@ -5,7 +5,6 @@ import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.Reporter
-import scala.annotation.meta.param
 
 class BrumGlobal(settings: Settings, reporter: Reporter)
     extends Global(settings, reporter) {
@@ -63,7 +62,6 @@ class BrumGlobal(settings: Settings, reporter: Reporter)
           val members = body.iterator.collect { case d: DefTree =>
             d.name
           }.toArray
-          pprint.log(members)
           withLocals(members) {
             super.traverse(tree)
             members.foreach(locals.remove(_))
@@ -84,7 +82,6 @@ class BrumGlobal(settings: Settings, reporter: Reporter)
             case d: DefDef => d.vparamss.iterator.flatten.map(_.name).toArray
             case _         => Array()
           }
-          pprint.log(name -> parameters)
           mods.annotations.foreach(traverse)
           withLocals(parameters) {
             super.traverse(tree)
@@ -121,7 +118,6 @@ class BrumGlobal(settings: Settings, reporter: Reporter)
               val qualifier = scope.get(name)
               val local = locals.get(name)
               val isLocal = local != null && local > 0
-              pprint.log(name -> isLocal -> locals)
               if (isLocal) {
                 () // do nothing
               } else if (qualifier != null) {

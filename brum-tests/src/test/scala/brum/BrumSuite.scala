@@ -1,16 +1,16 @@
 package brum
 
-import java.nio.file.Files
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.Path
-import java.nio.file.FileVisitResult
-import java.nio.file.attribute.BasicFileAttributes
 import java.nio.charset.StandardCharsets
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 
 class BrumSuite extends munit.FunSuite {
   val resourceDirectory = TestBuildInfo.resourceDirectory.toPath
   val snapshotDirectory = TestBuildInfo.snapshotDirectory.toPath
-  def updateSnapshots = false
+  def updateSnapshots = true
   if (System.getenv("CI") != null && updateSnapshots) {
     sys.error("updateSnapshots cannot be true inside CI.")
   }

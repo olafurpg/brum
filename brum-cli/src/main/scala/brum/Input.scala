@@ -1,12 +1,12 @@
 package brum
 
-import java.nio.file.Path
-import java.nio.file.Files
-import java.nio.charset.StandardCharsets
-import java.util.jar.JarFile
-import scala.collection.mutable.ArrayBuffer
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.jar.JarFile
+import scala.collection.mutable.ArrayBuffer
 
 case class Input private (filename: String, text: String, path: Option[Path]) {}
 
