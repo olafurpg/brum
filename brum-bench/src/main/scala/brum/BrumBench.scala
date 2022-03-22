@@ -13,8 +13,13 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
+import org.openjdk.jmh.annotations.Param
+import org.openjdk.jmh.annotations.AuxCounters
+import org.openjdk.jmh.annotations.Threads
 
-case class Corpus(url: String) {
+case class Corpus(url: String, ignorePatterns: List[String] = Nil) {
+  def isIgnored(filename: String): Boolean =
+    ignorePatterns.exists(pattern => filename.contains(pattern))
   def localPath(): Path = {
     val path = Paths.get(
       System.getProperty("java.io.tmpdir"),
@@ -37,11 +42,13 @@ object Corpus {
     )
   val cats =
     Corpus(
-      "https://github.com/typelevel/cats/archive/219fcfbc27a354ef2ace11b5a86e2f2590bded79.zip"
+      "https://github.com/typelevel/cats/archive/219fcfbc27a354ef2ace11b5a86e2f2590bded79.zip",
+      ignorePatterns = List("scala-3")
     )
   val scala =
     Corpus(
-      "https://github.com/scala/scala/archive/c8ee9915b35c2a9a6f039815b0d55e397e627034.zip"
+      "https://github.com/scala/scala/archive/c8ee9915b35c2a9a6f039815b0d55e397e627034.zip",
+      ignorePatterns = List("test/files", "tasty", "src-3")
     )
   val spark =
     Corpus(
@@ -49,8 +56,20 @@ object Corpus {
     )
   val all = List(paiges, cats, scala, spark)
 }
+object Counters {
+  @AuxCounters(AuxCounters.Type.EVENTS)
+  @State(Scope.Thread)
+  class AdditionalCounters {
+    var linesOfCode: Long = _
+    @Setup()
+    def setup(): Unit = {
+      linesOfCode = 0
+    }
+  }
+}
 
-@State(Scope.Benchmark)
+@State(Scope.Thread)
+@Threads(1)
 class BrumBench {
   @Setup
   def setup(): Unit = {
@@ -58,18 +77,20 @@ class BrumBench {
       corpus.localPath()
     }
   }
+  @Param(Array("spark", "scala", "cats", "paiges"))
+  var corpus: String = _
 
   @Benchmark
-  @BenchmarkMode(Array(Mode.SingleShotTime))
+  @BenchmarkMode(Array(Mode.AverageTime))
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  def singleShot: Unit = {
+  def singleShot(counters: Counters.AdditionalCounters): Unit = {
+    val Some(c) = Corpus.all.find(_.url.contains(corpus))
     val inputs = Input
-      .fromZipFile(Corpus.spark.localPath())
-      .filterNot(_.filename.contains("scala-3"))
+      .fromZipFile(c.localPath())
+      .filterNot(path => c.isIgnored(path.filename))
     val options = Options(inputs)
     val docs = Brum.run(options)
     val lines = inputs.iterator.map(_.text.count(_ == '\n')).sum
-    pprint.log(lines)
-    pprint.log(docs.last)
+    counters.linesOfCode = lines
   }
 }

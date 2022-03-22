@@ -48,12 +48,12 @@ lazy val tests = project
     )
   )
 
-commands += Command.command("benchFast") { s =>
-  "bench/Jmh/run -i 3 -wi 3 -f1 -t1" :: s
+commands += Command.args("benchFast", "extra") { (s, args) =>
+  s"bench/Jmh/run -i 1 -wi 1 -f1 -t1 ${args.mkString(" ")}" :: s
 }
 
-commands += Command.command("benchSlow") { s =>
-  "bench/Jmh/run -i 10 -wi 10 -f1 -t1" :: s
+commands += Command.args("benchSlow", "extra") { (s, args) =>
+  s"bench/Jmh/run -i 10 -wi 10 -f1 -t1 ${args.mkString(" ")}" :: s
 }
 
 lazy val bench = project
