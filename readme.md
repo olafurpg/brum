@@ -5,13 +5,15 @@ outputs a dependency graph between those files. The motivation behind Brum is to
 automatically generate fine-grained targets for build tools like Bazel or Pants.
 The key features of Brum include:
 
-- High performance: benchmarks indicate that Brum can process somewhere between
-  200-300k lines per second. The exact performance varies from codebase to
-  codebase depending on parameters like code density (for example, volume of
-- High fidelity: Brum uses the Scala 2 compiler meaning that it parses source
-  code exactly like the Scala compiler.
-- Easy to build from source: Brum only has one external dependency on the Scala
-  2 compiler making it easy to build the Brum codebase with any build tool.
+- **High performance**: benchmarks indicate that Brum can process somewhere
+  between 200-300k lines per second. The exact performance varies from codebase
+  to codebase depending on parameters like code density (for example, volume of
+- **High fidelity**: Brum uses the Scala 2 compiler meaning that it parses
+  source code exactly like the Scala compiler.
+- **Small dependency footprint**: it should be easy to build Brum from source.
+  Brum only has one external dependency on the Scala 2 compiler making it easy
+  to copy the codebase, build it from other build tools than sbt and tweak the
+  code.
 
 ## Getting started
 
@@ -53,12 +55,12 @@ functionality gets added.
 
 ```
 [info] Benchmark                         (corpus)  Mode  Cnt        Score   Error  Units
-[info] BrumBench.singleShot                 spark  avgt          3581.355          ms/op
-[info] BrumBench.singleShot:linesOfCode     spark  avgt       1090674.000     304k loc/s
-[info] BrumBench.singleShot                 scala  avgt          1533.126          ms/op
-[info] BrumBench.singleShot:linesOfCode     scala  avgt        363140.000     236k loc/s
-[info] BrumBench.singleShot                  cats  avgt           348.193          ms/op
-[info] BrumBench.singleShot:linesOfCode      cats  avgt         76470.000     219k loc/s
-[info] BrumBench.singleShot                paiges  avgt            28.770          ms/op
-[info] BrumBench.singleShot:linesOfCode    paiges  avgt          3518.000     122k loc/s
+[info] BrumBench.indexCorpus                 spark  avgt          3581.355          ms/op
+[info] BrumBench.indexCorpus:linesOfCode     spark  avgt       1090674.000     304k loc/s
+[info] BrumBench.indexCorpus                 scala  avgt          1533.126          ms/op
+[info] BrumBench.indexCorpus:linesOfCode     scala  avgt        363140.000     236k loc/s
+[info] BrumBench.indexCorpus                  cats  avgt           348.193          ms/op
+[info] BrumBench.indexCorpus:linesOfCode      cats  avgt         76470.000     219k loc/s
+[info] BrumBench.indexCorpus                paiges  avgt            28.770          ms/op
+[info] BrumBench.indexCorpus:linesOfCode    paiges  avgt          3518.000     122k loc/s
 ```

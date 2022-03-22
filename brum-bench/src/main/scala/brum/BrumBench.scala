@@ -83,7 +83,7 @@ class BrumBench {
   @Benchmark
   @BenchmarkMode(Array(Mode.AverageTime))
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  def singleShot(counters: Counters.AdditionalCounters): Unit = {
+  def indexCorpus(counters: Counters.AdditionalCounters): Unit = {
     val Some(c) = Corpus.all.find(_.url.contains(corpus))
     val inputs = Input
       .fromZipFile(c.localPath())
