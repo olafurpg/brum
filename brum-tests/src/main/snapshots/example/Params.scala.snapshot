@@ -1,0 +1,6 @@
+definition example.Params
+reference scala.collection.mutable.TreeMap
+reference scala.AnyRef
+reference example.Params.scala.AnyRef
+reference example.Params.String
+reference example.Params.Unit

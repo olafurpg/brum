@@ -9,7 +9,7 @@ object Brum {
   def main(args: Array[String]): Unit = {
     val options = Options.fromArguments(args)
     val docs = run(options)
-    pprint.log(docs)
+    docs.foreach { doc => println(doc.toJSON.renderAsString) }
   }
   def run(options: Options): ArrayBuffer[Document] = {
     val settings = new Settings()

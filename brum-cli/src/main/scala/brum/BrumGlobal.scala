@@ -5,6 +5,7 @@ import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.Reporter
+import scala.annotation.meta.param
 
 class BrumGlobal(settings: Settings, reporter: Reporter)
     extends Global(settings, reporter) {
@@ -13,13 +14,44 @@ class BrumGlobal(settings: Settings, reporter: Reporter)
     val unit = this.newCompilationUnit(input.text, input.filename)
     val tree = this.parseTree(unit.source)
     new DocumentTraverser(doc).traverse(tree)
-    // pprint.log(doc)
     doc
   }
 
   private class DocumentTraverser(doc: Document) extends Traverser {
     private val scope = new ju.LinkedHashMap[Name, String]
+    private val locals = new ju.HashMap[Name, Integer]
     private var currentPackage = List.empty[String]
+    private object ClassOrModuleDef {
+      def unapply(tree: Tree): Option[(Modifiers, Name, Template)] =
+        tree match {
+          case ModuleDef(mods, name, template)   => Some((mods, name, template))
+          case ClassDef(mods, name, _, template) => Some((mods, name, template))
+          case _                                 => None
+        }
+    }
+    def withLocals(names: Array[Name])(thunk: => Unit): Unit = {
+      addLocals(names)
+      thunk
+      removeLocals(names)
+    }
+    def addLocals(names: Array[Name]): Unit = {
+      names.foreach { name =>
+        val old = locals.get(name)
+        if (old == null) {
+          locals.put(name, 1)
+        } else {
+          locals.put(name, old + 1)
+        }
+      }
+    }
+    def removeLocals(names: Array[Name]): Unit = {
+      names.foreach { name =>
+        val old = locals.get(name)
+        if (old != null && old > 0) {
+          locals.put(name, old - 1)
+        }
+      }
+    }
     override def traverse(tree: Tree): Unit = {
       tree match {
         case PackageDef(pid, stats) =>
@@ -27,15 +59,48 @@ class BrumGlobal(settings: Settings, reporter: Reporter)
           currentPackage ::= fqn
           stats.foreach(traverse)
           currentPackage = currentPackage.tail
-        case ClassDef(mods, name, _, _) =>
-          currentPackage ::= name.toString()
-          doc.definitions.add(currentPackage.reverseIterator.mkString("."))
+        case Template(_, _, body) =>
+          val members = body.iterator.collect { case d: DefTree =>
+            d.name
+          }.toArray
+          pprint.log(members)
+          withLocals(members) {
+            super.traverse(tree)
+            members.foreach(locals.remove(_))
+          }
+        case ClassOrModuleDef(mods, name, template) =>
           mods.annotations.foreach(traverse)
-          super.traverse(tree)
-          currentPackage = currentPackage.tail
-        case ValOrDefDef(mods, _, _, _) =>
+          val isNamed = !name.endsWith("$anon")
+          if (isNamed) {
+            currentPackage ::= name.toString()
+            doc.definitions.add(currentPackage.reverseIterator.mkString("."))
+          }
+          traverse(template)
+          if (isNamed) {
+            currentPackage = currentPackage.tail
+          }
+        case ValOrDefDef(mods, name, _, _) =>
+          val parameters: Array[Name] = tree match {
+            case d: DefDef => d.vparamss.iterator.flatten.map(_.name).toArray
+            case _         => Array()
+          }
+          pprint.log(name -> parameters)
           mods.annotations.foreach(traverse)
-          super.traverse(tree)
+          withLocals(parameters) {
+            super.traverse(tree)
+          }
+        case Block(stats, expr) =>
+          val variables: Array[Name] = stats.iterator.collect {
+            case d: DefTree => d.name
+          }.toArray
+          withLocals(variables) {
+            super.traverse(tree)
+          }
+        case Function(vparams, _) =>
+          val params = vparams.iterator.map(_.name: Name).toArray
+          withLocals(params) {
+            super.traverse(tree)
+          }
         case Import(expr, selectors) =>
           val qualifierFqn = fullyQualifiedName(expr)
           selectors.foreach { selector =>
@@ -50,14 +115,28 @@ class BrumGlobal(settings: Settings, reporter: Reporter)
               scope.put(enteredName, fqn)
             }
           }
-        case _: Select =>
+        case _: Select | _: Ident =>
           fullyQualifiedName(tree) match {
             case fqn @ (name :: tail) =>
               val qualifier = scope.get(name)
-              if (qualifier != null) {
+              val local = locals.get(name)
+              val isLocal = local != null && local > 0
+              pprint.log(name -> isLocal -> locals)
+              if (isLocal) {
+                () // do nothing
+              } else if (qualifier != null) {
                 doc.references.add(tail.mkString(qualifier + ".", ".", ""))
-              } else {
-                doc.references.add(fqn.mkString("."))
+              } else if (!name.endsWith("$anon")) {
+                if (fqn.lengthCompare(1) > 0) {
+                  doc.references.add(fqn.mkString("."))
+                }
+                doc.references.add(
+                  fqn.mkString(
+                    currentPackage.reverseIterator.mkString("", ".", "."),
+                    ".",
+                    ""
+                  )
+                )
               }
             case Nil =>
               super.traverse(tree)

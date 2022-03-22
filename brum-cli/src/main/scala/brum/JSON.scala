@@ -3,7 +3,8 @@ package brum
 import java.{util => ju}
 
 object JSON {
-  case class Object(values: ju.LinkedHashMap[String, JSON]) extends JSON
+  case class Object(values: ju.LinkedHashMap[java.lang.String, JSON])
+      extends JSON
   case class Array(values: ju.ArrayDeque[JSON]) extends JSON
   case class String(value: java.lang.String) extends JSON
 }
@@ -13,9 +14,15 @@ sealed abstract class JSON {
     def loop(x: JSON): Unit = x match {
       case JSON.Object(values) =>
         out.addOne('{')
-        val it = values.values().iterator()
+        val it = values.entrySet().iterator()
         while (it.hasNext()) {
-          loop(it.next())
+          val entry = it.next()
+          out
+            .addOne('"')
+            .addAll(escape(entry.getKey()))
+            .addOne('"')
+            .addOne(':')
+          loop(entry.getValue())
           if (it.hasNext()) {
             out.addOne(',')
           }

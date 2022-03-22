@@ -4,6 +4,8 @@ def scala213 = "2.13.8"
 inThisBuild(
   List(
     scalaVersion := scala213,
+    crossScalaVersions := List(scala213, scala212, scala211),
+    fork := true,
     semanticdbEnabled := true,
     semanticdbVersion := "4.5.1",
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
@@ -23,17 +25,33 @@ lazy val cli = project
   .in(file("brum-cli"))
   .settings(
     projectSettings,
-    crossScalaVersions := List(scala213, scala212, scala211),
-    fork := true,
     libraryDependencies ++= List(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       "com.lihaoyi" %% "pprint" % "0.7.2" // only used for debugging, can be removed
     )
   )
 
+lazy val tests = project
+  .in(file("brum-tests"))
+  .dependsOn(cli)
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
+    projectSettings,
+    buildInfoPackage := "brum",
+    buildInfoObject := "TestBuildInfo",
+    buildInfoKeys := Seq[BuildInfoKey](
+      "resourceDirectory" -> (Compile / resourceDirectory).value,
+      "snapshotDirectory" -> (Compile / sourceDirectory).value / "snapshots"
+    ),
+    libraryDependencies ++= List(
+      "org.scalameta" %% "munit" % "1.0.0-M2"
+    )
+  )
+
 commands += Command.command("benchFast") { s =>
   "bench/Jmh/run -i 3 -wi 3 -f1 -t1" :: s
 }
+
 commands += Command.command("benchSlow") { s =>
   "bench/Jmh/run -i 10 -wi 10 -f1 -t1" :: s
 }
